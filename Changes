@@ -1,0 +1,6 @@
+Revision history for Perl extension DB::DataStructure.
+
+0.01  Sat Oct 23 01:34:08 2010
+	- original version; created by h2xs 1.23 with options
+		-AX DB::DataStructure
+
