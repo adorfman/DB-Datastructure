@@ -245,7 +245,6 @@ sub _dbi_check {
 
 1;
 __END__
-# Below is stub documentation for your module. You'd better edit it!
 
 =head1 NAME
 
@@ -277,9 +276,18 @@ my $hashref = {
 
 };
 
+#With refreeze set an existing datastructure with the same key
+will be overwritten.  Without it set it will error on trying
+to overwrite  
+On success freeze returns of the key name you set
+
 my $varname = $obj->freeze( myarray7 => $hashref, refreeze => 1  );
 
+#With thaw when refreeze set the datastructure is not removed from the 
+db when thawed 
+
 print Dumper( $obj->thaw($varname, refreeze => 1 ) ); 
+
 =head1 DESCRIPTION
 
 perl module for storing serialized data structures in a database
@@ -289,21 +297,9 @@ perl module for storing serialized data structures in a database
 None by default.
 
 
-
-=head1 SEE ALSO
-
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
-
-If you have a mailing list set up for your module, mention it here.
-
-If you have a web site set up for your module, mention it here.
-
 =head1 AUTHOR
 
-A. U. Thor, E<lt>adorfman@E<gt>
+A. Dorfman, E<lt>adorfman@E<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
