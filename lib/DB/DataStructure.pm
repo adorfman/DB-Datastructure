@@ -80,7 +80,7 @@ sub freeze {
             $self->_run_insert_query($query, $deflated, $varname);
         }
         else {
-            print "dstruct already exists\n"  and return
+            print "dstruct already exists\n"; 
             return;
         }
     }
@@ -258,9 +258,9 @@ use DB::DataStructure;
 my $obj = DB::DataStructure->new(
     'dbtype' => 'mysql',
     'dbhost' => 'localhost',
-    'db'     => 'addev',
-    'dbuser' => 'addev',
-    'dbpass' => 'ya23Jkasdv',
+    'db'     => 'database',
+    'dbuser' => 'user',
+    'dbpass' => 'password',
     'load_schema' => 1,
     #'table'  => 'configs'
 );
