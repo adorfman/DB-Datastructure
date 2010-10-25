@@ -13,6 +13,18 @@ our $VERSION = '0.01';
 my @DBI_PARAMS = qw( dbtype dbhost db dbuser dbpass port);
 my $DEFAULT_TABLE = 'config_options';
 my $DEFAULT_PORT = '3306';
+
+# db types must be mapped to their sub class
+# here. Sub classes need to contain the following 
+# global vars:
+#
+# SELECT_SQL      - select key 
+# INSERT_SQL      - insert key 
+# CHECK_SQL       - check if key exists
+# UPDATE_SQL      - update key
+# CHECK_TABLE_SQL - check if table exists
+# CREATE_TABLESQL - create table
+#
 my %TYPE_MAP = (
     mysql => 'DB::DataStructure::MySQL',
 );
@@ -132,10 +144,18 @@ sub _get_query {
     my $table = $self->{'opts'}->{'table'};
     my $class_var = sprintf( '$%s::%s', $self->{'type_class'} , $query_type  );
     my $query = eval $class_var;
+    die "this shouldn't happen $@" if $@;
+
+    # mysql doesn't like the table name quoted so have do 
+    # do this instead of using param subs
     $query =~ s/##TABLE##/$table/;
     return $query;
 
 }
+
+## TODO: for now inflate/deflate just uses JSON
+## this could be expanded later to include options
+## that trigger other serialization methods
 
 sub _inflate {
 
