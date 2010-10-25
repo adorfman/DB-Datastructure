@@ -15,7 +15,7 @@ our $UPDATE_SQL = 'update ##TABLE## set serialized = ? where data_struct = ?';
 our $CHECK_TABLE_SQL = 'show tables like ?';
 
 our $CREATE_TABLE_SQL =<<SCHEMA 
-CREATE TABLE config_options (
+CREATE TABLE ##TABLE## (
     `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
      `data_struct` VARCHAR(48) NOT NULL,
      `serialized`  TEXT,
