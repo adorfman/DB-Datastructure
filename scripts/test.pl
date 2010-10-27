@@ -29,4 +29,4 @@ my $hashref = {
 
 my $varname = $obj->freeze( myarray7 => $hashref, refreeze => 1  );
 
-print Dumper( $obj->thaw($varname, refreeze => 1 ) );
+print Dumper( $obj->thaw($varname, refreeze => 1) );

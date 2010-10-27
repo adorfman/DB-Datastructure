@@ -7,6 +7,7 @@ use DBD::mysql;
 use Data::Dumper;
 use JSON;
 use DB::DataStructure::MySQL ;
+use Time::Local;
 
 our $VERSION = '0.01';
 
@@ -18,12 +19,12 @@ my $DEFAULT_PORT = '3306';
 # here. Sub classes need to contain the following 
 # global vars:
 #
-# SELECT_SQL      - select key 
-# INSERT_SQL      - insert key 
-# CHECK_SQL       - check if key exists
-# UPDATE_SQL      - update key
-# CHECK_TABLE_SQL - check if table exists
-# CREATE_TABLESQL - create table
+# SELECT_SQL      - query to select key 
+# INSERT_SQL      - query to insert key 
+# CHECK_SQL       - query to check if key exists
+# UPDATE_SQL      - query to update key
+# CHECK_TABLE_SQL - query to check if table exists
+# CREATE_TABLESQL - query to create table
 #
 my %TYPE_MAP = (
     mysql => 'DB::DataStructure::MySQL',
@@ -36,10 +37,10 @@ sub new {
     my $self = {};
     bless $self, $class ;
 
-    $self->{'opts'}  = { _param_check(\ @options ) } ;
+    $self->{'opts'}  = { $self->_param_check(\ @options ) } ;
 
     $self->{'dbh'} = 
-        ( _dbi_check($self->{'opts'}->{'dbh'} ) )
+        ( $self->_dbi_check($self->{'opts'}->{'dbh'} ) )
         ? $self->{'opts'}->{'dbh'}
         : $self->_get_dbh(); 
 
@@ -63,9 +64,9 @@ sub new {
 
 sub freeze {
     
-    my ($self, $varname, $dstruct, @options) = @_ ;
+    my ($self, $key, $dstruct, @options) = @_ ;
 
-    my %options = _param_check(\@options);
+    my %options = $self->_param_check(\@options);
     
     
     my $deflated = $self->_deflate($dstruct);
@@ -74,10 +75,10 @@ sub freeze {
 
     my $query ;
 
-    if ( $self->_check_for_key($varname) ) {
+    if ( $self->_check_for_key($key) ) {
         if ($options{'refreeze'} ) {
             $query = $self->_get_query('UPDATE_SQL');
-            $self->_run_insert_query($query, $deflated, $varname);
+            $self->_run_query($query, $deflated, $key);
         }
         else {
             print "dstruct already exists\n"; 
@@ -86,27 +87,27 @@ sub freeze {
     }
     else {
         $query = $self->_get_query('INSERT_SQL');
-        $self->_run_insert_query($query, $varname, $deflated) ;
+        $self->_run_query($query, $key, $deflated) ;
     }
 
-    return $varname
+    return $key;
 
 }
 
 sub thaw {
 
-    my ($self, $dstruct, @options) = @_ ;
+    my ($self, $key, @options) = @_ ;
 
-    my %options = _param_check(\@options);
+    my %options = $self->_param_check(\@options);
     
     my $query = $self->_get_query('SELECT_SQL');
 
-    my $deflated = $self->_run_select_query($query, $dstruct);
+    my $deflated = $self->_run_select_query($query, $key);
 
-    warn "non-existant dstruct $dstruct \n" and return
+    warn "non-existant dstruct key : $key \n" and return
         unless ($deflated);
 
-    $self->_delete($dstruct)
+    $self->_delete($key)
         unless ( $options{'refreeze'} );
 
     return  $self->_inflate( $deflated ) ;
@@ -115,27 +116,25 @@ sub thaw {
 
 sub _run_select_query {
 
-    my ($self, $query, @vars) = @_;
-
-    (_dbi_check($self->{'dbh'}))
-        or die 'No database handle';
-
-    my $dbh = $self->{'dbh'} ;
-    my $sth = $dbh->prepare($query);
-    $sth->execute(@vars) ;
+    my $self = shift;
+    
+    my $sth = $self->_run_query(@_);
+    
     return $sth->fetchrow_array()
 }
 
-sub _run_insert_query {
+sub _run_query {
 
     my ($self, $query, @vars) = @_;
     
-    (_dbi_check($self->{'dbh'}))
+    ($self->_dbi_check($self->{'dbh'}))
         or die 'No database handle';
      
     my $dbh = $self->{'dbh'} ;
     my $sth = $dbh->prepare($query);
     $sth->execute(@vars) ;
+
+    return $sth;
 }
 
 sub _get_query {
@@ -181,7 +180,7 @@ sub _delete {
 
     my ($self, $key) = @_;
     my $query = $self->_get_query('DELETE_SQL');
-    return $self->_run_insert_query($query, $key);
+    return $self->_run_query($query, $key);
 
 }
 
@@ -210,7 +209,7 @@ sub _load_schema {
     
     my ($self, $options ) = @_ ;
     my $query = $self->_get_query('CREATE_TABLE_SQL');
-    $self->_run_insert_query( $query );
+    $self->_run_query( $query );
 }
 
 sub _table_check {
@@ -223,7 +222,7 @@ sub _table_check {
 
 sub _param_check {
 
-    my $optsref = shift;
+    my ( $self, $optsref ) = @_;
     ( scalar( @{$optsref} ) % 2 == 0 ) 
         or die 'Uneven config parameters';
     return @{$optsref}; 
@@ -231,7 +230,7 @@ sub _param_check {
 
 sub _dbi_check {
    
-    my $dbh = shift;
+    my ($self, $dbh ) = @_;
 
     return 1
         if ( ref( $dbh ) && $dbh =~ /^DBI/ );
@@ -240,7 +239,14 @@ sub _dbi_check {
 
 }
 
-
+sub _mysql_date_to_epoch {
+    my ($self, $date_time ) = @_;
+    my ( $date, $time) = split(' ',$date_time);
+    my ($year, $mon, $mday) = split('-',$date);
+    my ($hour, $min, $sec) = split(':',$time);
+    my $epoch = timelocal($sec,$min,$hour,$mday,$mon,$year);
+    return $epoch; 
+}        
 
 
 1;
